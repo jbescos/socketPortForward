@@ -14,8 +14,13 @@ public class DebugLogger {
 		}
 	}
 	
-	public void log(String message) {
+	public synchronized void log(String message) {
 		System.out.println(message);
+	}
+	
+	public synchronized void logException(String message, Throwable t) {
+	    log(message);
+	    t.printStackTrace();
 	}
 
 	public boolean isDebug() {
