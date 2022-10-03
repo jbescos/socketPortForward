@@ -30,18 +30,15 @@ public class Main {
                     while (true) {
                         logger.log("Listening connections in " + listen);
                         String listener = "";
-                        CountDownLatch latch = new CountDownLatch(1);
-                        try (Socket origin = server.accept();
-                                Socket forwardSocket = new Socket(host, port);
-                                MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket,
-                                        latch, logger, true);
-                                MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin,
-                                        latch, logger, false);) {
+                        try {
+                            Socket origin = server.accept();
+                            Socket forwardSocket = new Socket(host, port);
+                            MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket, logger, true);
+                            MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin, logger, false);
                             listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
                             logger.log(listener + " Incoming connection stablished ");
                             originToForward.start();
                             forwardToOrigin.start();
-                            latch.await();
                         } catch (IOException e) {
                             logger.log(listener + " Socket disconnected. Reason: " + e.getMessage());
                         }

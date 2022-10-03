@@ -4,24 +4,19 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MiddleCommunicator implements AutoCloseable {
+public class MiddleCommunicator {
 
 	private final Socket readerSocket;
 	private final String readerId;
 	private final Socket writerSocket;
 	private final String writerId;
-	private final CountDownLatch latch;
 	private final DebugLogger logger;
 	private final boolean originToForward;
-	private final AtomicBoolean running = new AtomicBoolean(true);
 
-	public MiddleCommunicator(Socket readerSocket, Socket writerSocket, CountDownLatch latch, DebugLogger logger, boolean originToForward) {
+	public MiddleCommunicator(Socket readerSocket, Socket writerSocket, DebugLogger logger, boolean originToForward) {
 		this.readerSocket = readerSocket;
 		this.writerSocket = writerSocket;
-		this.latch = latch;
 		this.logger = logger;
 		this.originToForward = originToForward;
 		this.readerId = readerSocket.getInetAddress().getHostAddress() + ":" + readerSocket.getPort();
@@ -33,16 +28,18 @@ public class MiddleCommunicator implements AutoCloseable {
 		reader.start();
 	}
 
-	@Override
-	public void close() throws Exception {
-		stop();
-	}
-
 	public void stop() {
-		if (running.getAndSet(false)) {
-			logger.log(this + " > " + writerId + " stopped.");
-			latch.countDown();
+		logger.log(this + " > " + writerId + " stopped.");
+		try {
+		    readerSocket.close();
+		} catch (IOException e) {
+		    logger.logException(MiddleCommunicator.this + " cannot close reader socket.", e);
 		}
+		try {
+		    writerSocket.close();
+        } catch (IOException e) {
+            logger.logException(MiddleCommunicator.this + " cannot close writer socket.", e);
+        }
 	}
 
     @Override
@@ -56,25 +53,19 @@ public class MiddleCommunicator implements AutoCloseable {
 		public void run() {
 		    // 1 MB
 			byte[] buffer = new byte[1024 * 1024];
-			while(running.get()) {
-			    try(BufferedOutputStream writer = new BufferedOutputStream(writerSocket.getOutputStream());) {
-    				try (BufferedInputStream reader = new BufferedInputStream(readerSocket.getInputStream());) {
-    					int read;
-    					while(running.get() && (read = reader.read(buffer)) != -1) {
-    						logger.debug(MiddleCommunicator.this + " " + read + " bytes");
-    						logger.debug(new String(buffer, 0, read));
-    						writer.write(buffer, 0, read);
-    						writer.flush();
-    					}
-    				} catch (IOException e) {
-    				    logger.logException(MiddleCommunicator.this + " cannot read.", e);
-    				    stop();
-    				}
-			    } catch (IOException e1) {
-			        logger.logException(MiddleCommunicator.this + " cannot write.", e1);
-			        stop();
-                }
-			}
+		    try(BufferedOutputStream writer = new BufferedOutputStream(writerSocket.getOutputStream());
+		            BufferedInputStream reader = new BufferedInputStream(readerSocket.getInputStream());) {
+				int read;
+				while((read = reader.read(buffer)) != -1) {
+					logger.debug(MiddleCommunicator.this + " " + read + " bytes");
+					logger.debug(new String(buffer, 0, read));
+					writer.write(buffer, 0, read);
+					writer.flush();
+				}
+		    } catch (IOException e) {
+		        // Any socket closed
+            }
+		    stop();
 		}
 	}
 
