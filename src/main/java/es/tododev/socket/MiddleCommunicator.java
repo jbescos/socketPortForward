@@ -54,14 +54,15 @@ public class MiddleCommunicator implements AutoCloseable {
 
 		@Override
 		public void run() {
-			byte[] buffer = new byte[1024];
+		    // 1 MB
+			byte[] buffer = new byte[1024 * 1024];
 			while(running.get()) {
 			    try(BufferedOutputStream writer = new BufferedOutputStream(writerSocket.getOutputStream());) {
     				try (BufferedInputStream reader = new BufferedInputStream(readerSocket.getInputStream());) {
     					int read;
     					while(running.get() && (read = reader.read(buffer)) != -1) {
     						logger.debug(MiddleCommunicator.this + " " + read + " bytes");
-    						logger.debug(MiddleCommunicator.this + "\n" + new String(buffer, 0, read));
+    						logger.debug(new String(buffer, 0, read));
     						writer.write(buffer, 0, read);
     						writer.flush();
     					}
