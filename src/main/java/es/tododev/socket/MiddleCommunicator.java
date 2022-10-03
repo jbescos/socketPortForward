@@ -70,16 +70,10 @@ public class MiddleCommunicator implements AutoCloseable {
     				    stop();
     				}
 			    } catch (IOException e1) {
-			        logger.logException(MiddleCommunicator.this + " cannot write. Will try again.", e1);
-			        sleep(10);
+			        logger.logException(MiddleCommunicator.this + " cannot write.", e1);
+			        stop();
                 }
 			}
-		}
-		
-		private void sleep(long time) {
-		    try {
-                Thread.sleep(time);
-            } catch (InterruptedException e) {}
 		}
 	}
 
