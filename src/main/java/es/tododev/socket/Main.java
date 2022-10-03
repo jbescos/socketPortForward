@@ -26,25 +26,24 @@ public class Main {
             } else {
                 String host = hostPort[0];
                 int port = Integer.parseInt(hostPort[1]);
-                while (true) {
-                    logger.log("Listening connections in " + listen);
-                    try (ServerSocket server = new ServerSocket(Integer.parseInt(listen))) {
-                        try (Socket forwardSocket = new Socket(host, port)) {
-                            String listener = "";
-                            CountDownLatch latch = new CountDownLatch(1);
-                            try (Socket origin = server.accept();
-                                    MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket,
-                                            latch, logger, true);
-                                    MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin,
-                                            latch, logger, false);) {
-                                listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
-                                logger.log(listener + " Incoming connection stablished ");
-                                originToForward.start();
-                                forwardToOrigin.start();
-                                latch.await();
-                            } catch (IOException e) {
-                                logger.log(listener + " Socket disconnected. Reason: " + e.getMessage());
-                            }
+                try (ServerSocket server = new ServerSocket(Integer.parseInt(listen))) {
+                    while (true) {
+                        logger.log("Listening connections in " + listen);
+                        String listener = "";
+                        CountDownLatch latch = new CountDownLatch(1);
+                        try (Socket origin = server.accept();
+                                Socket forwardSocket = new Socket(host, port);
+                                MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket,
+                                        latch, logger, true);
+                                MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin,
+                                        latch, logger, false);) {
+                            listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
+                            logger.log(listener + " Incoming connection stablished ");
+                            originToForward.start();
+                            forwardToOrigin.start();
+                            latch.await();
+                        } catch (IOException e) {
+                            logger.log(listener + " Socket disconnected. Reason: " + e.getMessage());
                         }
                     }
                 }
