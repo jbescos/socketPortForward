@@ -1,8 +1,24 @@
 package es.tododev.socket;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 public class DebugLogger {
 	
+    private final static Logger LOGGER;
 	private final boolean debug;
+	
+	static {
+	    try (InputStream configFile = DebugLogger.class.getResourceAsStream("/logging.properties")) {
+	        LogManager.getLogManager().readConfiguration(configFile);
+	        LOGGER = Logger.getLogger(DebugLogger.class.getName());
+	    } catch (IOException e) {
+            throw new IllegalStateException("Cannot initialize the logger", e);
+        }
+	}
 
 	public DebugLogger(boolean debug) {
 		this.debug = debug;
@@ -14,13 +30,13 @@ public class DebugLogger {
 		}
 	}
 	
-	public synchronized void log(String message) {
-		System.out.println(message);
+	public void log(String message) {
+	    LOGGER.info("[" + Thread.currentThread() + "] " + message);
 	}
 	
-	public synchronized void logException(String message, Throwable t) {
+	public void logException(String message, Throwable t) {
 	    log(message);
-	    t.printStackTrace();
+	    LOGGER.log(Level.SEVERE, message, t);
 	}
 
 	public boolean isDebug() {
