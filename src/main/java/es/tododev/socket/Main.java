@@ -3,7 +3,6 @@ package es.tododev.socket;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
 
 public class Main {
 
@@ -33,8 +32,10 @@ public class Main {
                         try {
                             Socket origin = server.accept();
                             Socket forwardSocket = new Socket(host, port);
-                            MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket, logger, true);
-                            MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin, logger, false);
+                            MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket, logger,
+                                    true);
+                            MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin, logger,
+                                    false);
                             listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
                             logger.log(listener + " Incoming connection stablished ");
                             originToForward.start();
