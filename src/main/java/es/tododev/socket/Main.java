@@ -1,16 +1,19 @@
 package es.tododev.socket;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
 
     private static final String LISTEN_PARAM = "-listen";
     private static final String FORWARD_PARAM = "-forward";
     private static final String DEBUG_PARAM = "-debug";
+    private static final int TIMEOUT = 5000;
 
     public static void main(String[] args) throws Exception {
+        ExecutorService executor = Executors.newCachedThreadPool();
         String listen = value(LISTEN_PARAM, args);
         String forward = value(FORWARD_PARAM, args);
         boolean debug = exists(DEBUG_PARAM, args);
@@ -29,24 +32,23 @@ public class Main {
                     while (true) {
                         logger.log("Listening connections in " + listen);
                         String listener = "";
-                        try {
-                            Socket origin = server.accept();
-                            Socket forwardSocket = new Socket(host, port);
-                            MiddleCommunicator originToForward = new MiddleCommunicator(origin, forwardSocket, logger,
-                                    true);
-                            MiddleCommunicator forwardToOrigin = new MiddleCommunicator(forwardSocket, origin, logger,
-                                    false);
-                            listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
-                            logger.log(listener + " Incoming connection stablished ");
-                            originToForward.start();
-                            forwardToOrigin.start();
-                        } catch (IOException e) {
-                            logger.log(listener + " Socket disconnected. Reason: " + e.getMessage());
-                        }
+                        Socket origin = server.accept();
+                        origin.setSoTimeout(TIMEOUT);
+                        Socket forwardSocket = new Socket(host, port);
+                        forwardSocket.setSoTimeout(TIMEOUT);
+                        MiddleCommunicator originToForward = new MiddleCommunicator(executor, origin, forwardSocket, logger,
+                                true);
+                        MiddleCommunicator forwardToOrigin = new MiddleCommunicator(executor, forwardSocket, origin, logger,
+                                false);
+                        listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
+                        logger.log(listener + " Incoming connection stablished ");
+                        originToForward.start();
+                        forwardToOrigin.start();
                     }
                 }
             }
         }
+        executor.shutdown();
     }
 
     private static boolean exists(String param, String[] args) {
