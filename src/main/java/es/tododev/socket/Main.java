@@ -10,10 +10,11 @@ public class Main {
     private static final String LISTEN_PARAM = "-listen";
     private static final String FORWARD_PARAM = "-forward";
     private static final String DEBUG_PARAM = "-debug";
-    private static final int TIMEOUT = 5000;
+    // 10 minutes
+    private static final int TIMEOUT = 600000;
 
     public static void main(String[] args) throws Exception {
-        ExecutorService executor = Executors.newCachedThreadPool();
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         String listen = value(LISTEN_PARAM, args);
         String forward = value(FORWARD_PARAM, args);
         boolean debug = exists(DEBUG_PARAM, args);
