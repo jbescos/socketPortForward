@@ -37,10 +37,8 @@ public class Main {
                         origin.setSoTimeout(TIMEOUT);
                         Socket forwardSocket = new Socket(host, port);
                         forwardSocket.setSoTimeout(TIMEOUT);
-                        MiddleCommunicator originToForward = new MiddleCommunicator(executor, origin, forwardSocket, logger,
-                                true);
-                        MiddleCommunicator forwardToOrigin = new MiddleCommunicator(executor, forwardSocket, origin, logger,
-                                false);
+                        MiddleCommunicator originToForward = new MiddleCommunicator(executor, origin, forwardSocket, logger, true);
+                        MiddleCommunicator forwardToOrigin = new MiddleCommunicator(executor, forwardSocket, origin, logger, false);
                         listener = origin.getInetAddress().getHostAddress() + ":" + origin.getPort();
                         logger.log(listener + " Incoming connection stablished ");
                         originToForward.start();

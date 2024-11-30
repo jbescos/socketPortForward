@@ -1,11 +1,14 @@
 package es.tododev.socket;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 
 public class MiddleCommunicator {
 
+    private static final int BUFFER_SIZE = 1024 * 1024;
     private final ExecutorService executor;
     private final Socket readerSocket;
     private final String readerId;
@@ -54,15 +57,19 @@ public class MiddleCommunicator {
 
         @Override
         public void run() {
-            // 1 MB
-            byte[] buffer = new byte[1024 * 1024];
+            // 1 KB
+            byte[] buffer = new byte[BUFFER_SIZE];
             try {
                 int read;
-                while ((read = readerSocket.getInputStream().read(buffer)) != -1) {
-                    logger.debug(MiddleCommunicator.this + " " + read + " bytes");
-                    logger.debug(new String(buffer, 0, read));
-                    writerSocket.getOutputStream().write(buffer, 0, read);
-                    writerSocket.getOutputStream().flush();
+                InputStream in = readerSocket.getInputStream();
+                OutputStream out = writerSocket.getOutputStream();
+                while ((read = in.read(buffer)) != -1) {
+                    if (logger.isDebug()) {
+                        logger.debug(MiddleCommunicator.this + " " + read + " bytes");
+                        logger.debug(new String(buffer, 0, read));
+                    }
+                    out.write(buffer, 0, read);
+                    out.flush();
                 }
             } catch (IOException e) {
                 logger.logException("Error reading or writing from socket", e);
